@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chatbot Widget</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-light: #3b82f6;
+            --secondary: #f8fafc;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --success: #22c55e;
+            --error: #ef4444;
+            --border: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--secondary);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 300px;
+            background: white;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .logo {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+            font-size: 1.25rem;
+            color: var(--primary);
+        }
+
+        .url-section {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .url-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        .url-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+        }
+
+        .init-button {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .init-button:hover {
+            background: var(--primary-light);
+        }
+
+        .init-button:disabled {
+            background: var(--text-light);
+            cursor: not-allowed;
+        }
+
+        /* Main Chat Area */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: var(--secondary);
+        }
+
+        .chat-header {
+            padding: 1rem 1.5rem;
+            background: white;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-title {
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .chat-status {
+            font-size: 0.875rem;
+            color: var(--text-light);
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 1rem;
+            border-radius: 1rem;
+            position: relative;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background: var(--primary);
+            color: white;
+            border-bottom-right-radius: 0.25rem;
+        }
+
+        .bot-message {
+            align-self: flex-start;
+            background: white;
+            border-bottom-left-radius: 0.25rem;
+            box-shadow: var(--shadow);
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            margin-top: 0.5rem;
+        }
+
+        .user-message .message-time {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .chat-input-container {
+            padding: 1.5rem;
+            background: white;
+            border-top: 1px solid var(--border);
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            resize: none;
+            min-height: 40px;
+            max-height: 120px;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+        }
+
+        .send-button {
+            padding: 0.75rem 1.5rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .send-button:hover {
+            background: var(--primary-light);
+        }
+
+        .send-button:disabled {
+            background: var(--text-light);
+            cursor: not-allowed;
+        }
+
+        /* Status Messages */
+        .status-message {
+            text-align: center;
+            padding: 0.75rem;
+            color: var(--text-light);
+            font-size: 0.875rem;
+        }
+
+        .error-message {
+            text-align: center;
+            padding: 0.75rem;
+            color: var(--error);
+            font-size: 0.875rem;
+        }
+
+        /* Typing Indicator */
+        .typing-indicator {
+            display: flex;
+            gap: 0.25rem;
+            padding: 0.5rem 1rem;
+            background: white;
+            border-radius: 1rem;
+            width: fit-content;
+            margin: 0.5rem 0;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--text-light);
+            border-radius: 50%;
+            animation: typing 1s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--text-light);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text);
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">AI Chatbot</div>
+        <div class="url-section">
+            <input type="url" id="urlInput" class="url-input" placeholder="Enter website URL to analyze" />
+            <button onclick="initializeChat()" class="init-button" id="initButton">Initialize Chat</button>
+        </div>
+    </div>
+
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="chat-title">Chat Session</div>
+            <div class="chat-status" id="chatStatus">Not initialized</div>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot-message">
+                <div class="message-content">
+                    Hello! I'm your AI assistant. Please provide a website URL to start our conversation.
+                </div>
+                <div class="message-time" id="initialMessageTime"></div>
+            </div>
+        </div>
+
+        <div class="status-message" id="statusMessage"></div>
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="chat-input-container">
+            <div class="input-wrapper">
+                <textarea 
+                    id="messageInput" 
+                    class="message-input" 
+                    placeholder="Type your message..." 
+                    disabled
+                    rows="1"
+                ></textarea>
+                <button onclick="sendMessage()" class="send-button" id="sendButton" disabled>Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let sessionId = null;
+        const chatMessages = document.getElementById('chatMessages');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const urlInput = document.getElementById('urlInput');
+        const initButton = document.getElementById('initButton');
+        const statusMessage = document.getElementById('statusMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        const chatStatus = document.getElementById('chatStatus');
+        const initialMessageTime = document.getElementById('initialMessageTime');
+
+        // Set initial message time
+        initialMessageTime.textContent = new Date().toLocaleTimeString();
+
+        // Auto-resize textarea
+        messageInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+
+        function showTypingIndicator() {
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator';
+            typingDiv.innerHTML = `
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            `;
+            chatMessages.appendChild(typingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const typingIndicator = document.querySelector('.typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        function addMessage(content, isUser = false) {
+            if (!content) {
+                console.warn('Attempted to add empty message');
+                return;
+            }
+
+            console.log('Adding message to UI:', { content, isUser });
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+            
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+            
+            // Format the content to preserve newlines and handle markdown-style formatting
+            let formattedContent = content
+                // First, handle the list items properly
+                .replace(/\n\*\s+\*\*(.*?)\*\*:\s*(.*?)(?=\n\*|\n\n|$)/g, '<br>• <strong>$1:</strong> $2')
+                // Then handle remaining bold text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                // Then handle remaining italic text
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                // Finally, handle newlines
+                .replace(/\n/g, '<br>');
+            
+            console.log('Formatted content:', formattedContent);
+            messageContent.innerHTML = formattedContent;
+            
+            const messageTime = document.createElement('div');
+            messageTime.className = 'message-time';
+            messageTime.textContent = new Date().toLocaleTimeString();
+            
+            messageDiv.appendChild(messageContent);
+            messageDiv.appendChild(messageTime);
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            console.log('Message added to UI successfully');
+        }
+
+        function showStatus(message) {
+            console.log('Status:', message);
+            statusMessage.textContent = message;
+            errorMessage.textContent = '';
+            statusMessage.style.display = 'block';
+            setTimeout(() => {
+                statusMessage.style.display = 'none';
+            }, 3000);
+        }
+
+        function showError(message) {
+            console.error('Error:', message);
+            errorMessage.textContent = message;
+            statusMessage.textContent = '';
+            errorMessage.style.display = 'block';
+            addMessage('Error: ' + message, false);
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 5000);
+        }
+
+        async function initializeChat() {
+            const url = urlInput.value.trim();
+            if (!url) {
+                showError('Please enter a valid URL');
+                return;
+            }
+
+            showStatus('Initializing chat...');
+            urlInput.disabled = true;
+            initButton.disabled = true;
+            chatStatus.textContent = 'Initializing...';
+
+            try {
+                console.log('Initializing chat for URL:', url);
+                const response = await fetch('http://localhost:8000/embed', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: url })
+                });
+
+                console.log('Embed response status:', response.status);
+                const data = await response.json();
+                console.log('Embed response data:', data);
+
+                if (data.status === 'success') {
+                    sessionId = data.data.session_id;
+                    showStatus('Chat initialized successfully!');
+                    messageInput.disabled = false;
+                    sendButton.disabled = false;
+                    chatStatus.textContent = 'Ready';
+                    addMessage(`I've analyzed the content from ${url}. How can I help you?`);
+                } else {
+                    const errorMsg = data.details || data.message || 'Failed to initialize chat';
+                    showError(errorMsg);
+                    urlInput.disabled = false;
+                    initButton.disabled = false;
+                    chatStatus.textContent = 'Not initialized';
+                }
+            } catch (error) {
+                console.error('Initialization error:', error);
+                showError('Error connecting to the server: ' + error.message);
+                urlInput.disabled = false;
+                initButton.disabled = false;
+                chatStatus.textContent = 'Not initialized';
+            }
+        }
+
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message || !sessionId) {
+                console.log('Message or sessionId is missing:', { message, sessionId });
+                return;
+            }
+
+            console.log('Starting message send process...');
+            addMessage(message, true);
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+            showTypingIndicator();
+            chatStatus.textContent = 'Typing...';
+
+            try {
+                console.log('Preparing request:', {
+                    url: 'http://localhost:8000/chat',
+                    method: 'POST',
+                    body: {
+                        query: message,
+                        session_id: sessionId
+                    }
+                });
+
+                const response = await fetch('http://localhost:8000/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        query: message,
+                        session_id: sessionId
+                    })
+                });
+
+                console.log('Response received:', {
+                    status: response.status,
+                    statusText: response.statusText
+                });
+
+                const data = await response.json();
+                console.log('Response data:', data);
+                
+                removeTypingIndicator();
+                chatStatus.textContent = 'Ready';
+
+                if (!data) {
+                    console.error('Empty response received');
+                    showError('Received empty response from server');
+                    return;
+                }
+
+                if (data.status === 'success' && data.data && data.data.response) {
+                    console.log('Successfully extracted response:', data.data.response);
+                    addMessage(data.data.response);
+                } else {
+                    console.error('Invalid response format:', data);
+                    const errorMsg = data.message || data.details || 'Failed to get response';
+                    showError(errorMsg);
+                }
+            } catch (error) {
+                console.error('Error in sendMessage:', error);
+                removeTypingIndicator();
+                chatStatus.textContent = 'Error';
+                showError('Error connecting to the server: ' + error.message);
+            }
+        }
+
+        // Handle Enter key
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey && !messageInput.disabled) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        urlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                initializeChat();
+            }
+        });
+    </script>
+</body>
+</html> 
